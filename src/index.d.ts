@@ -15,6 +15,29 @@ export type ExtensionPermissionV0 =
   | "tasks.interrupt"
   | `secrets.read:${string}`;
 
+export interface ExtensionContributionV0 {
+  id: string;
+  title?: string;
+  [key: string]: unknown;
+}
+
+export interface ExtensionContributionsV0 {
+  display?: ExtensionContributionV0[];
+  dashboard?: ExtensionContributionV0[];
+  [key: string]: unknown;
+}
+
+/**
+ * Optional read-only presentation hook exposed by a backend instance.
+ * Core owns rendering and lifecycle cleanup; returned data must be structured-
+ * cloneable and must not contain secret values.
+ */
+export interface ExtensionBackendInstanceV0 {
+  start?: () => unknown | Promise<unknown>;
+  stop?: () => unknown | Promise<unknown>;
+  contributionSnapshot?: () => unknown | Promise<unknown>;
+}
+
 export interface ExtensionManifestV0 {
   schema: "totem.extension/v0";
   id: string;
@@ -26,7 +49,7 @@ export interface ExtensionManifestV0 {
   lifecycle?: { start?: "on-enable" | "on-demand" };
   permissions?: ExtensionPermissionV0[];
   events?: { publish?: string[]; subscribe?: string[] };
-  contributions?: Record<string, unknown>;
+  contributions?: ExtensionContributionsV0;
   settings?: Record<string, unknown>;
   secrets?: Array<{ id: string; required?: boolean }>;
   mcp?: Array<Record<string, unknown>>;
