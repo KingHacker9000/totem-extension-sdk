@@ -52,7 +52,19 @@ assertValidManifest(manifest);
 - targeted `phase1_stub_manifest` migration warnings for old `entrypoint` / `capabilities` fields
 - rejection of unknown fields inside security-sensitive structures
 
-Unknown top-level fields are preserved but never interpreted as authority. Reserved `contributions`, `settings`, and `mcp` objects are currently round-tripped; their detailed runtime semantics are owned by the Phase 2 core runtime lane.
+Unknown top-level fields are preserved but never interpreted as authority.
+
+## Contributions
+
+The TypeScript API includes `ExtensionContributionV0`, `ExtensionContributionsV0`, and `ExtensionBackendInstanceV0`. A manifest may declare generic `dashboard` and `display` descriptors with package-local IDs/titles. Backends may expose the optional read-only hook:
+
+```ts
+contributionSnapshot(): unknown | Promise<unknown>
+```
+
+Totem core owns rendering. The snapshot must be structured-cloneable presentation data and must never contain secret values. Extensions do not inject arbitrary React, HTML, or JavaScript into host surfaces.
+
+A display contribution does not grant display authority. Extensions that present on the device request `display.present`, and core exposes the display contribution only when that permission is effectively granted. Dashboard contribution metadata is rendered by the generic dashboard host and is removed when the extension is disabled or fails.
 
 ## Compatibility helpers
 
@@ -79,7 +91,3 @@ The tests use Node's built-in test runner, so the manifest layer needs no instal
 - Extensions may be declarative or MCP-only and therefore need no backend entrypoint.
 - Service-specific logic belongs in extensions, not core.
 - Themes are a separate SDK and cannot use extension permissions as a capability mechanism.
-
-## Next SDK surfaces
-
-The Phase 2 runtime lane will define the concrete public APIs for lifecycle hooks, contributions, settings/secrets access, MCP registration, events, and testing utilities on top of this manifest/compatibility foundation. Those APIs should extend this package without weakening the v0 manifest security rules.
