@@ -1,0 +1,21 @@
+{
+  "name": "@totem/extension-sdk",
+  "version": "0.2.0",
+  "description": "Public Totem extension manifest authoring and validation SDK",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "files": ["src", "examples", "README.md"],
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check src/index.js && node --test"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "MIT"
+}

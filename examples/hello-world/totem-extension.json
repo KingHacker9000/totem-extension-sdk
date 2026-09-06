@@ -1,0 +1,27 @@
+{
+  "schema": "totem.extension/v0",
+  "id": "hello-world",
+  "name": "Hello World",
+  "version": "0.2.0",
+  "compatibility": {
+    "totem": ">=0.2.0 <0.3.0",
+    "sdk": ">=0.2.0 <0.3.0"
+  },
+  "enabledByDefault": true,
+  "lifecycle": {
+    "start": "on-demand"
+  },
+  "permissions": [],
+  "events": {
+    "publish": ["extension.hello-world.greeted"],
+    "subscribe": ["core.status"]
+  },
+  "contributions": {
+    "display": [
+      {
+        "id": "hello-card",
+        "title": "Hello World"
+      }
+    ]
+  }
+}

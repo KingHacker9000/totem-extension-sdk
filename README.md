@@ -2,41 +2,84 @@
 
 Public SDK and compatibility contract for building Totem extensions.
 
-Extensions add **capabilities** to Totem: tools, MCP servers/connectors, background work, events, settings, secrets access, display views, dashboard views, and host/device integrations.
+The first working SDK contract is `totem.extension/v0`, defined normatively by `KingHacker9000/totem/docs/EXTENSION_MANIFEST_V0.md`. This repository provides the public authoring types, manifest validator, compatibility checks, permission vocabulary helpers, and fixtures that extension authors use without importing Totem core internals.
 
-## Planned contents
+## Install / consume
 
-- extension manifest schema
-- generated TypeScript/Python types as needed
-- permission/capability definitions
-- event APIs
-- display contribution APIs
-- dashboard contribution APIs
-- MCP registration helpers
-- settings/secrets APIs
-- lifecycle hooks
-- testing/mocking utilities
-- compatibility/version checks
-- extension scaffolding CLI/templates
-- developer documentation and fixtures
+The package is intentionally zero-dependency for the v0 manifest layer and supports Node 22+.
+
+```js
+import {
+  defineManifest,
+  validateManifest,
+  assertValidManifest,
+} from "@totem/extension-sdk";
+
+const manifest = defineManifest({
+  schema: "totem.extension/v0",
+  id: "hello-world",
+  name: "Hello World",
+  version: "0.2.0",
+  compatibility: {
+    totem: ">=0.2.0 <0.3.0",
+    sdk: ">=0.2.0 <0.3.0",
+  },
+  permissions: [],
+});
+
+const result = validateManifest(manifest, {
+  runtimeVersions: { totem: "0.2.0", sdk: "0.2.0" },
+});
+
+if (!result.ok) console.error(result.diagnostics);
+assertValidManifest(manifest);
+```
+
+`defineManifest()` preserves TypeScript inference through the shipped declaration file. `validateManifest()` never throws for ordinary invalid input and returns stable diagnostics; `assertValidManifest()` is the strict convenience form.
+
+## What v0 validates
+
+- required identity and `totem.extension/v0` schema
+- SemVer package version and supported compatibility ranges
+- running Totem/SDK compatibility when runtime versions are supplied
+- package-local backend entrypoints with root-escape rejection
+- lifecycle start mode
+- exact least-privilege permission vocabulary, including `secrets.read:<id>`
+- duplicate/unknown permission rejection
+- normalized event syntax and extension-owned publish namespace enforcement
+- reserved secret declaration shape
+- warning-only unknown top-level metadata
+- targeted `phase1_stub_manifest` migration warnings for old `entrypoint` / `capabilities` fields
+- rejection of unknown fields inside security-sensitive structures
+
+Unknown top-level fields are preserved but never interpreted as authority. Reserved `contributions`, `settings`, and `mcp` objects are currently round-tripped; their detailed runtime semantics are owned by the Phase 2 core runtime lane.
+
+## Compatibility helpers
+
+The SDK exports `isValidSemver`, `isValidSemverRange`, and `satisfiesSemverRange`. v0 intentionally supports the range forms used by the Totem contract and fixtures: exact versions, comparator chains such as `>=0.2.0 <0.3.0`, caret ranges, and tilde ranges.
+
+## Hello-world fixture
+
+`examples/hello-world/totem-extension.json` is a copyright-clean declarative fixture that validates through the same public `validateManifest()` API intended for third-party extensions. It requests no privileged permissions and publishes only inside `extension.hello-world.*`.
+
+## Development
+
+```bash
+npm test
+npm run check
+```
+
+The tests use Node's built-in test runner, so the manifest layer needs no install-time third-party dependencies.
 
 ## Architectural rules
 
-- Extensions must declare requested permissions.
+- Extensions declare requested permissions; the manifest is never authority by itself.
+- Totem core enforces effective grants at privileged boundaries.
 - Extensions must not import private Totem core internals.
-- Extensions may be MCP-only.
-- Extension UI requests display presentation through Totem's display manager rather than taking direct ownership of the screen.
-- Service-specific logic belongs in extensions, not the core.
-- Themes are a separate SDK and must not be used as a capability mechanism.
+- Extensions may be declarative or MCP-only and therefore need no backend entrypoint.
+- Service-specific logic belongs in extensions, not core.
+- Themes are a separate SDK and cannot use extension permissions as a capability mechanism.
 
-## Phase 1 stub contract
+## Next SDK surfaces
 
-The full public SDK is **not frozen yet**. During Phase 1, the main `KingHacker9000/totem` repository owns a deliberately minimal discovery contract in `docs/DISCOVERY.md` using the pre-v1 schema id `totem.extension/v0`.
-
-That stub exists only to prove local discovery/validation, enablement, diagnostics, coarse capability declaration, and dashboard visibility. It is not the final permission model, registry contract, package format, compatibility promise, or SDK v1 manifest.
-
-Implementations and examples in this repository should not treat Phase 1 stub details as permanent public API without an explicit later compatibility decision.
-
-The first full working SDK contract will be established in a later software phase after the Phase 1 runtime seams have been exercised.
-
-See the main architecture documentation in `KingHacker9000/totem`.
+The Phase 2 runtime lane will define the concrete public APIs for lifecycle hooks, contributions, settings/secrets access, MCP registration, events, and testing utilities on top of this manifest/compatibility foundation. Those APIs should extend this package without weakening the v0 manifest security rules.
